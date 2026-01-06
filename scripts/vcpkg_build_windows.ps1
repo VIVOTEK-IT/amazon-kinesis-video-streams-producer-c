@@ -20,24 +20,32 @@ if (-not (Test-Path $buildDir)) {
 }
 Push-Location $buildDir
 
+Write-Host "Generating Debug configuration..." -ForegroundColor Cyan
 cmake -G "Visual Studio 17 2022" `
     -DBUILD_TEST=FALSE `
     -DCMAKE_TOOLCHAIN_FILE="$toolchainFile" `
     -DCMAKE_INSTALL_PREFIX="$installPrefixDebug" `
     -DBUILD_COMMON_LWS=TRUE `
     -DBUILD_COMMON_CURL=TRUE `
+    -DVCPKG_INSTALL_OPTIONS="--clean-after-build" `
     ..
 
+Write-Host "Building Debug configuration..." -ForegroundColor Cyan
 cmake --build . --config Debug --target install
 
+Write-Host "Generating Release configuration..." -ForegroundColor Green
 cmake -G "Visual Studio 17 2022" `
     -DBUILD_TEST=FALSE `
     -DCMAKE_TOOLCHAIN_FILE="$toolchainFile" `
     -DCMAKE_INSTALL_PREFIX="$installPrefixRelease" `
     -DBUILD_COMMON_LWS=TRUE `
     -DBUILD_COMMON_CURL=TRUE `
+    -DVCPKG_INSTALL_OPTIONS="--clean-after-build" `
     ..
 
+Write-Host "Building Release configuration..." -ForegroundColor Green
 cmake --build . --config Release --target install
+
+Write-Host "Build and installation completed." -ForegroundColor Yellow
 
 Pop-Location
