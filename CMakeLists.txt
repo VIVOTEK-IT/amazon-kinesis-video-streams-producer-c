@@ -14,11 +14,11 @@ include(GNUInstallDirs)
 # User Flags
 option(ADD_MUCLIBC "Add -muclibc c flag" OFF)
 option(BUILD_STATIC "Static build" OFF)
-option(BUILD_DEPENDENCIES "Whether or not to build depending libraries from source" ON)
+option(BUILD_DEPENDENCIES "Whether or not to build depending libraries from source" OFF)
 option(USE_OPENSSL "Use openssl as crypto library" ON)
 option(USE_MBEDTLS "Use mbedtls as crypto library" OFF)
 option(BUILD_COMMON_LWS "Whether or not to build ProducerC libwebsockets common library" OFF)
-option(BUILD_COMMON_CURL "Whether or not to build ProducerC curl common library" ON)
+option(BUILD_COMMON_CURL "Whether or not to build ProducerC curl common library" OFF)
 option(BUILD_OPENSSL_PLATFORM "If buildng OpenSSL what is the target platform" OFF)
 option(LOCAL_OPENSSL_BUILD "Whether or not to use local OpenSSL build" OFF)
 option(CONSTRAINED_DEVICE "Change pthread stack size" OFF)
@@ -64,69 +64,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-if(BUILD_DEPENDENCIES)
-  if (NOT OPEN_SRC_INSTALL_PREFIX)
-    set(OPEN_SRC_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/open-source)
-    set(ENV{PKG_CONFIG_PATH}
-          "$ENV{PKG_CONFIG_PATH}:${OPEN_SRC_INSTALL_PREFIX}/lib/pkgconfig")
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${OPEN_SRC_INSTALL_PREFIX})
-  endif()
-
-  if(NOT EXISTS ${OPEN_SRC_INSTALL_PREFIX})
-    file(MAKE_DIRECTORY ${OPEN_SRC_INSTALL_PREFIX})
-  endif()
-
-  message(STATUS "Begin building dependencies.")
-
-  set(SSL_OPTIONS USE_OPENSSL USE_MBEDTLS)
-  count_true(ENABLED_SSL_OPTION_COUNT
-    ${SSL_OPTIONS})
-
-  if(ENABLED_SSL_OPTION_COUNT GREATER "1")
-    message(FATAL_ERROR "Only one of ${SSL_OPTIONS} can be enabled")
-  endif()
-
-  if(NOT LOCAL_OPENSSL_BUILD)
-    message(STATUS "Building non-local OpenSSL")
-    if(USE_OPENSSL)
-      set(BUILD_ARGS -DBUILD_STATIC=${BUILD_STATIC}
-                    -DBUILD_OPENSSL_PLATFORM=${BUILD_OPENSSL_PLATFORM})
-      build_dependency(openssl ${BUILD_ARGS})
-    elseif(USE_MBEDTLS)
-      set(BUILD_ARGS -DBUILD_STATIC=${BUILD_STATIC} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
-      build_dependency(mbedtls ${BUILD_ARGS})
-    else()
-      message(FATAL_ERROR "No crypto library selected.")
-    endif()
-  endif()
-
-  if (BUILD_COMMON_LWS)
-    set(BUILD_ARGS  -DBUILD_STATIC=${BUILD_STATIC}
-                    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                    -DOPENSSL_DIR=${OPEN_SRC_INSTALL_PREFIX}
-                    -DUSE_OPENSSL=${USE_OPENSSL}
-                    -DUSE_MBEDTLS=${USE_MBEDTLS})
-    build_dependency(websockets ${BUILD_ARGS})
-  endif()
-
-  if (BUILD_COMMON_CURL)
-    set(BUILD_ARGS  -DBUILD_STATIC=${BUILD_STATIC}
-                    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                    -DUSE_OPENSSL=${USE_OPENSSL}
-                    -DUSE_MBEDTLS=${USE_MBEDTLS})
-    build_dependency(curl ${BUILD_ARGS})
-
-  endif()
-
-  if(BUILD_TEST)
-    build_dependency(gtest)
-  endif()
-
-  message(STATUS "Finished building dependencies.")
-endif()
-
 find_package(PkgConfig REQUIRED)
 
+if(BUILD_TEST)
+  find_package(GTest CONFIG REQUIRED)
+endif()
 ############# Check system for kvspic #############
 
 pkg_check_modules(KVSPIC libkvspicUtils)
@@ -181,13 +123,10 @@ endif()
 
 if (BUILD_COMMON_LWS)
   if (WIN32)
-    find_package(LIBWEBSOCKETS REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
+    find_package(libwebsockets CONFIG REQUIRED)
   else()
     pkg_check_modules(LIBWEBSOCKETS REQUIRED libwebsockets)
   endif()
-
-  set(OPEN_SRC_INCLUDE_DIRS ${OPEN_SRC_INCLUDE_DIRS} ${LIBWEBSOCKETS_INCLUDE_DIRS})
-  link_directories(${LIBWEBSOCKETS_LIBRARY_DIRS})
 endif()
 
 ############# find dependent libraries end ############
