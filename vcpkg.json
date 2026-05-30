@@ -1,7 +1,7 @@
 {
   "name": "akvspc",
   "version": "1.5.4",
-  "builtin-baseline": "62159a45e18f3a9ac0548628dcaf74fcb60c6ff9",
+  "builtin-baseline": "00d899c410b31467733472fc3a83a25729046b13",
   "description": "Kinesis Video Producer C library with optional OpenSSL, mbedtls, curl, and libwebsockets support.",
   "dependencies": [
     "openssl",
